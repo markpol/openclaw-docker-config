@@ -33,3 +33,20 @@ services:
       - ${OPENCLAW_WORKSPACE_DIR:-/home/openclaw/.openclaw/workspace}:/workspace
     profiles:
       - sync
+
+  # For multi-agent setups, duplicate the workspace-sync service for each agent.
+  # The volume subdirectory must match the agent's workspace path in openclaw.json
+  # (e.g. "workspace": "~/.openclaw/workspace/second" → mount /second).
+  #
+  # workspace-sync-second:
+  #   image: ghcr.io/${GHCR_USERNAME}/openclaw-docker-config/workspace-sync:latest
+  #   restart: unless-stopped
+  #   environment:
+  #     GIT_WORKSPACE_REPO: ${GIT_WORKSPACE_REPO_SECOND:-}
+  #     GIT_WORKSPACE_BRANCH: ${GIT_WORKSPACE_BRANCH:-auto}
+  #     GIT_WORKSPACE_TOKEN: ${GIT_WORKSPACE_TOKEN:-}
+  #     GIT_WORKSPACE_SYNC_SCHEDULE: ${GIT_WORKSPACE_SYNC_SCHEDULE:-0 4 * * *}
+  #   volumes:
+  #     - ${OPENCLAW_WORKSPACE_DIR:-/home/openclaw/.openclaw/workspace}/second:/workspace
+  #   profiles:
+  #     - sync

@@ -71,6 +71,10 @@ fi
 
 echo "[...] Checking for changes..."
 
+# Remove nested .git dirs created by OpenClaw's ensureGitRepo() in agent workspaces.
+# These break `git add -A` (git treats them as submodule refs without .gitmodules).
+find "$WORKSPACE_DIR" -mindepth 2 -name ".git" -type d -exec rm -rf {} + 2>/dev/null || true
+
 git add -A
 
 if git diff --cached --quiet; then
