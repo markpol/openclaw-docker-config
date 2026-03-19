@@ -19,7 +19,7 @@ echo ""
 
 # Run initial sync to verify credentials
 echo "[workspace-sync] Running initial sync..."
-workspace-sync.sh
+/usr/local/bin/workspace-sync.sh
 echo ""
 
 # Set up cron — pass env vars through to the cron job
