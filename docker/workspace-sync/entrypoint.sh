@@ -23,14 +23,13 @@ echo "[workspace-sync] Running initial sync..."
 echo ""
 
 # Set up cron — pass env vars through to the cron job
-# Save env in a file that can be safely sourced (values may contain spaces)
-env > /tmp/workspace-sync.env
+# Save env in a file that can be safely sourced
+export -p > /tmp/env.sh
+chmod 600 /tmp/env.sh
 
 cat > /usr/local/bin/run-sync.sh << 'WRAPPER'
-#!/bin/sh
-while IFS= read -r line; do
-    export "$line"
-done < /tmp/workspace-sync.env
+#!/bin/bash
+. /tmp/env.sh
 exec /usr/local/bin/workspace-sync.sh
 WRAPPER
 chmod +x /usr/local/bin/run-sync.sh
