@@ -2,7 +2,7 @@
 # =============================================================================
 # OpenClaw Workspace Git Sync
 # =============================================================================
-# Commits and pushes the workspace to a private GitHub repo.
+# Commits and pushes the workspace to a private git remote.
 # Reads config from environment variables (passed by Docker).
 # =============================================================================
 
@@ -11,6 +11,7 @@ set -euo pipefail
 WORKSPACE_DIR="/workspace"
 
 GIT_WORKSPACE_REPO="${GIT_WORKSPACE_REPO:-}"
+GIT_WORKSPACE_REMOTE="${GIT_WORKSPACE_REMOTE:-}"
 GIT_WORKSPACE_BRANCH="${GIT_WORKSPACE_BRANCH:-auto}"
 GIT_WORKSPACE_TOKEN="${GIT_WORKSPACE_TOKEN:-}"
 
@@ -18,12 +19,17 @@ GIT_WORKSPACE_TOKEN="${GIT_WORKSPACE_TOKEN:-}"
 # Validate
 # -----------------------------------------------------------------------------
 
-if [[ -z "$GIT_WORKSPACE_REPO" ]]; then
-    echo "[SKIP] GIT_WORKSPACE_REPO not set"
+if [[ -z "$GIT_WORKSPACE_REPO" ]] && [[ -z "$GIT_WORKSPACE_REMOTE" ]]; then
+    echo "[SKIP] Neither GIT_WORKSPACE_REPO nor GIT_WORKSPACE_REMOTE set"
     exit 0
 fi
 
-if [[ -z "$GIT_WORKSPACE_TOKEN" ]]; then
+if [[ -n "$GIT_WORKSPACE_REMOTE" ]] && [[ -n "$GIT_WORKSPACE_REPO" ]]; then
+    echo "[SKIP] Both GIT_WORKSPACE_REMOTE and GIT_WORKSPACE_REPO are set - please set only one"
+    exit 0
+fi
+
+if [[ -n "$GIT_WORKSPACE_REPO" ]] && [[ -z "$GIT_WORKSPACE_TOKEN" ]]; then
     echo "[ERROR] GIT_WORKSPACE_TOKEN not set"
     exit 1
 fi
@@ -37,10 +43,17 @@ fi
 # Git setup
 # -----------------------------------------------------------------------------
 
-REMOTE_URL="https://${GIT_WORKSPACE_TOKEN}@github.com/${GIT_WORKSPACE_REPO}.git"
+if [[ -n "$GIT_WORKSPACE_REPO" ]]; then
+    GIT_WORKSPACE_REMOTE="https://${GIT_WORKSPACE_TOKEN}@github.com/${GIT_WORKSPACE_REPO}.git"
+fi
 
 echo "=== OpenClaw Workspace Sync ==="
-echo "Repo: $GIT_WORKSPACE_REPO"
+if [[ -n "$GIT_WORKSPACE_REPO" ]]; then
+    echo "Repo: $GIT_WORKSPACE_REPO"
+fi
+if [[ -n "$GIT_WORKSPACE_REMOTE" ]]; then
+    echo "Remote: VARIABLE_HIDDEN_FOR_SECURITY"
+fi
 echo "Branch: $GIT_WORKSPACE_BRANCH"
 echo ""
 
@@ -52,9 +65,9 @@ if [[ ! -d ".git" ]]; then
 fi
 
 if git remote get-url origin &>/dev/null; then
-    git remote set-url origin "$REMOTE_URL"
+    git remote set-url origin "$GIT_WORKSPACE_REMOTE"
 else
-    git remote add origin "$REMOTE_URL"
+    git remote add origin "$GIT_WORKSPACE_REMOTE"
 fi
 
 git config user.name "OpenClaw Bot"
@@ -89,7 +102,7 @@ FILE_COUNT=$(git diff --cached --numstat | wc -l | tr -d ' ')
 echo "[...] Committing $FILE_COUNT changed file(s)..."
 git commit -m "workspace sync $TIMESTAMP" --quiet
 
-echo "[...] Pushing to $GIT_WORKSPACE_REPO ($GIT_WORKSPACE_BRANCH)..."
+echo "[...] Pushing to ${GIT_WORKSPACE_REPO:-remote} ($GIT_WORKSPACE_BRANCH)..."
 
 if git ls-remote --exit-code origin "$GIT_WORKSPACE_BRANCH" &>/dev/null; then
     git pull origin "$GIT_WORKSPACE_BRANCH" --rebase --allow-unrelated-histories --quiet 2>/dev/null || true

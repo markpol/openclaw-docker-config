@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # If repo is not configured, idle forever (don't restart-loop)
-if [[ -z "${GIT_WORKSPACE_REPO:-}" ]]; then
-    echo "[workspace-sync] GIT_WORKSPACE_REPO not set — idling"
+if [[ -z "${GIT_WORKSPACE_REPO:-}" ]] && [[ -z "${GIT_WORKSPACE_REMOTE:-}" ]]; then
+    echo "[workspace-sync] GIT_WORKSPACE_REPO and GIT_WORKSPACE_REMOTE not set — idling"
     exec sleep infinity
 fi
 
@@ -12,7 +12,12 @@ git config --global --add safe.directory /workspace
 
 SCHEDULE="${GIT_WORKSPACE_SYNC_SCHEDULE:-0 4 * * *}"
 
-echo "[workspace-sync] Repo: $GIT_WORKSPACE_REPO"
+if [[ -n "$GIT_WORKSPACE_REPO" ]]; then
+    echo "[workspace-sync] Repo: $GIT_WORKSPACE_REPO"
+fi
+if [[ -n "$GIT_WORKSPACE_REMOTE" ]]; then
+    echo "[workspace-sync] Remote: VARIABLE_HIDDEN_FOR_SECURITY"
+fi
 echo "[workspace-sync] Branch: ${GIT_WORKSPACE_BRANCH:-auto}"
 echo "[workspace-sync] Schedule: $SCHEDULE"
 echo ""

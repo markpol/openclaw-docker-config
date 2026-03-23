@@ -186,24 +186,46 @@ These are intentionally minimal — add your own skills based on your workflows.
 
 ## Workspace Git Sync (Optional)
 
-Back up your `~/.openclaw/workspace` directory to a private GitHub repo automatically. Runs as a Docker sidecar container with built-in cron, pushing to a configurable branch (default: `auto`). You can then manually merge `auto` into `main` via PR whenever you want.
+Back up your `~/.openclaw/workspace` directory to a private git remote automatically. Runs as a Docker sidecar container with built-in cron, pushing to a configurable branch (default: `auto`). You can then manually merge `auto` into `main` via PR whenever you want.
+
+Supports GitHub, GitLab, Bitbucket, and any git remote that accepts HTTPS push with inline authentication.
 
 ### Setup
+
+Choose **one** of the two options below — do not set both.
+
+#### Option 1: GitHub shorthand
 
 1. **Create a private GitHub repo** (e.g. `your-username/openclaw-workspace`)
 2. **Create a GitHub PAT** at [github.com/settings/tokens](https://github.com/settings/tokens) with `repo` scope
 3. **Add to your `.env`** (or infra repo's `secrets/openclaw.env`):
    ```
    GIT_WORKSPACE_REPO=your-username/openclaw-workspace
-   GIT_WORKSPACE_BRANCH=auto
    GIT_WORKSPACE_TOKEN=ghp_your_personal_access_token
-   GIT_WORKSPACE_SYNC_SCHEDULE=0 4 * * *
    ```
-4. **Deploy** — the sidecar auto-enables when `GIT_WORKSPACE_REPO` is set:
-   ```bash
-   # From infra repo:
-   make push-env && make deploy
+
+#### Option 2: Generic git remote
+
+1. **Build the remote URL** with inline authentication for your provider:
+   - GitLab: `https://user:token@gitlab.com/username/repo.git`
+   - Bitbucket: `https://x-token-auth:token@bitbucket.org/username/repo.git`
+2. **Add to your `.env`** (or infra repo's `secrets/openclaw.env`):
    ```
+   GIT_WORKSPACE_REMOTE=https://user:token@gitlab.com/username/openclaw-workspace.git
+   ```
+
+#### Common settings (both options)
+
+```
+GIT_WORKSPACE_BRANCH=auto
+GIT_WORKSPACE_SYNC_SCHEDULE=0 4 * * *
+```
+
+**Deploy** — the sidecar auto-enables when either `GIT_WORKSPACE_REPO` or `GIT_WORKSPACE_REMOTE` is set:
+```bash
+# From infra repo:
+make push-env && make deploy
+```
 
 The sidecar runs an initial sync on startup, then syncs on the configured cron schedule (default: daily at 4 AM UTC).
 
@@ -216,7 +238,7 @@ make workspace-sync
 
 ### Disable
 
-Remove or clear `GIT_WORKSPACE_REPO` from your `.env` and redeploy.
+Remove or clear `GIT_WORKSPACE_REPO` / `GIT_WORKSPACE_REMOTE` from your `.env` and redeploy.
 
 ## Accessing the Dashboard
 
