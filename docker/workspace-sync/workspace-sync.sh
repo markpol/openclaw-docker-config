@@ -45,9 +45,6 @@ fi
 
 if [[ -n "$GIT_WORKSPACE_REPO" ]]; then
     GIT_WORKSPACE_REMOTE="https://github.com/${GIT_WORKSPACE_REPO}.git"
-fi
-
-if [[ -n "$GIT_WORKSPACE_TOKEN" ]]; then
     export GIT_ASKPASS="/usr/local/bin/git-askpass.sh"
     export GIT_TERMINAL_PROMPT=0
 fi
