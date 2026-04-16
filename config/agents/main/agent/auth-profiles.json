@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "profiles": {
+    "vercel-ai-gateway:default": {
+      "type": "api_key",
+      "provider": "vercel-ai-gateway",
+      "keyRef": {
+        "source": "env",
+        "id": "AI_GATEWAY_API_KEY"
+      }
+    }
+  }
+}

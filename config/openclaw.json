@@ -2,8 +2,19 @@
   "gateway": {
     "mode": "local",
     "port": 18789,
+    "bind": "loopback",
+    "auth": {
+      "allowTailscale": true
+    },
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    },
     "controlUi": {
-      "allowedOrigins": ["http://localhost:18789"]
+      "allowInsecureAuth": false,
+      "allowedOrigins": [
+        "https://openclaw-prod.${TAILSCALE_DOMAIN}"
+      ]
     }
   },
 
@@ -13,13 +24,18 @@
       "botToken": "${TELEGRAM_BOT_TOKEN}",
       "dmPolicy": "pairing",
       "groupPolicy": "allowlist",
-      "streaming": "partial"
+      "streaming": {
+        "mode": "partial"
+      }
     }
   },
 
   "plugins": {
     "entries": {
       "telegram": {
+        "enabled": true
+      },
+      "vercel-ai-gateway": {
         "enabled": true
       }
     }
@@ -28,7 +44,7 @@
   "agents": {
     "defaults": {
       "model": {
-        "primary": "anthropic/claude-opus-4-6"
+        "primary": "vercel-ai-gateway/xai/grok-4-fast-reasoning"
       },
       "compaction": {
         "mode": "safeguard"
@@ -49,21 +65,43 @@
     "ackReactionScope": "group-mentions"
   },
 
-  "auth": {
-    "profiles": {
-      "anthropic:manual": {
-        "provider": "anthropic",
-        "mode": "token"
-      }
-    },
-    "order": {
-      "anthropic": ["anthropic:manual"]
-    }
-  },
-
   "logging": {
     "level": "info",
     "consoleLevel": "info",
     "redactSensitive": "tools"
+  },
+
+  "auth": {
+    "profiles": {
+      "vercel-ai-gateway:default": {
+        "provider": "vercel-ai-gateway",
+        "mode": "api_key"
+      }
+    }
+  },
+
+  "mcp": {
+    "servers": {
+      "github": {
+        "command": "docker",
+        "args": [
+          "run",
+          "-i",
+          "--rm",
+          "-e",
+          "GITHUB_PERSONAL_ACCESS_TOKEN",
+          "-e",
+          "GITHUB_DYNAMIC_TOOLSETS",  
+          "-e",
+          "GITHUB_INSIDERS",
+          "ghcr.io/github/github-mcp-server"
+        ],
+        "env": {
+          "GITHUB_PERSONAL_ACCESS_TOKEN": "${GH_TOKEN}",
+          "GITHUB_DYNAMIC_TOOLSETS": "1",
+          "GITHUB_INSIDERS": "true"
+        }
+      }
+    }
   }
 }

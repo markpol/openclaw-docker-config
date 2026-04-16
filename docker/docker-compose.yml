@@ -7,7 +7,7 @@ services:
       HOME: /home/node
       NODE_ENV: production
       TERM: xterm-256color
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY}
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       BRAVE_API_KEY: ${BRAVE_API_KEY}
@@ -15,6 +15,7 @@ services:
     volumes:
       - ${OPENCLAW_CONFIG_DIR:-/home/openclaw/.openclaw}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR:-/home/openclaw/.openclaw/workspace}:/home/node/.openclaw/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "127.0.0.1:18789:18789"
     command: openclaw gateway --bind lan --port 18789
