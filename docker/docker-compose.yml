@@ -7,18 +7,61 @@ services:
       HOME: /home/node
       NODE_ENV: production
       TERM: xterm-256color
-      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY}
-      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      BRAVE_API_KEY: ${BRAVE_API_KEY}
-      GH_TOKEN: ${GH_TOKEN:-}
     volumes:
       - ${OPENCLAW_CONFIG_DIR:-/home/openclaw/.openclaw}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR:-/home/openclaw/.openclaw/workspace}:/home/node/.openclaw/workspace
-      - /var/run/docker.sock:/var/run/docker.sock
+      - HUBPROXY_URL="http://hubproxy:8081/api/replay"
+    networks:
+      - openclaw-net
     ports:
       - "127.0.0.1:18789:18789"
     command: openclaw gateway --bind lan --port 18789
+
+  # Ingests GitHub webhooks
+  hubproxy:
+    image: ghcr.io/${GHCR_USERNAME}/openclaw-docker-config/hubproxy:latest
+    env_file: .env
+    restart: unless-stopped
+    environment:
+      - HUBPROXY_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET}   # same secret you set in GitHub
+      - HUBPROXY_DB=postgres://hubproxy:${POSTGRES_PASSWORD}@postgres:5432/hubproxy?sslmode=disable
+      - HUBPROXY_LOG_LEVEL=info
+      # NO HUBPROXY_TARGET_URL → pure ingestion-only mode (no auto-forward)
+    ports:
+      - "127.0.0.1:8443:8080"   # ← Webhook handler (exposed via Tailscale Funnel)
+    networks:
+      - openclaw-net
+    depends_on:
+      - postgres
+
+  # Persists webhook events, database for the hubproxy
+  postgres:
+    image: postgres:16-alpine
+    env_file: .env
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=hubproxy
+      - POSTGRES_USER=hubproxy
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - ./hubproxy-postgres-data:/var/lib/postgresql/data
+    networks:
+      - openclaw-net
+
+  # Optional regulator service to sync events from hubproxy to OpenClaw agents.
+  regulator:
+    image: ghcr.io/${GHCR_USERNAME}/openclaw-docker-config/regulator:latest
+    env_file: .env
+    restart: unless-stopped
+    environment:
+      - REGULATOR_CONFIG_PATH=${REGULATOR_CONFIG_PATH}
+      - REGULATOR_LOG_LEVEL=info
+      - REGULATOR_SYNC_INTERVAL=60000  # Sync every 60 seconds. Adjust as needed.
+    volumes:
+      - ${REGULATOR_CONFIG_PATH}:/home/node/regulator-config.json:ro
+      - ${OPENCLAW_CONFIG_DIR:-/home/openclaw/.openclaw}:/home/node/.openclaw:ro
+    networks:
+      - openclaw-net
 
   workspace-sync:
     image: ghcr.io/${GHCR_USERNAME}/openclaw-docker-config/workspace-sync:latest
@@ -51,3 +94,7 @@ services:
   #     - ${OPENCLAW_WORKSPACE_DIR:-/home/openclaw/.openclaw/workspace}/second:/workspace
   #   profiles:
   #     - sync
+
+networks:
+  openclaw-net:
+    driver: bridge

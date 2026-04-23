@@ -268,9 +268,21 @@ In the infra repo:
 
 Images are built locally and pushed to GHCR via `scripts/build-and-push.sh`:
 
+```bash
+# Build and push all images with the default latest tag
+bash scripts/build-and-push.sh
+
+# Build and push one image with the default latest tag
+bash scripts/build-and-push.sh latest gateway
+
+# Build and push one image with a custom tag
+bash scripts/build-and-push.sh v1.2.3 hubproxy
+```
+
 - `ghcr.io/YOUR_USERNAME/openclaw-docker-config/openclaw-gateway:latest` — main gateway image
 - `ghcr.io/YOUR_USERNAME/openclaw-docker-config/workspace-sync:latest` — workspace git sync sidecar
-- Both images also get a `:<sha>` tag pinned to the git commit
+- `ghcr.io/YOUR_USERNAME/openclaw-docker-config/hubproxy:latest` — hubproxy image
+- All images also get a `:<sha>` tag pinned to the git commit
 
 **One-time GHCR login (laptop):**
 

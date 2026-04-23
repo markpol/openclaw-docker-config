@@ -13,11 +13,10 @@
     "controlUi": {
       "allowInsecureAuth": false,
       "allowedOrigins": [
-        "https://openclaw-prod.${TAILSCALE_DOMAIN}"
+        "http://localhost:18789"
       ]
     }
   },
-
   "channels": {
     "telegram": {
       "enabled": true,
@@ -29,7 +28,6 @@
       }
     }
   },
-
   "plugins": {
     "entries": {
       "telegram": {
@@ -37,10 +35,19 @@
       },
       "vercel-ai-gateway": {
         "enabled": true
+      },
+      "memory-core": {
+        "config": {
+          "dreaming": {
+            "enabled": true
+          }
+        }
+      },
+      "memory-wiki": {
+        "enabled": true
       }
     }
   },
-
   "agents": {
     "defaults": {
       "model": {
@@ -55,22 +62,18 @@
       }
     }
   },
-
   "commands": {
     "native": "auto",
     "nativeSkills": "auto"
   },
-
   "messages": {
     "ackReactionScope": "group-mentions"
   },
-
   "logging": {
     "level": "info",
     "consoleLevel": "info",
     "redactSensitive": "tools"
   },
-
   "auth": {
     "profiles": {
       "vercel-ai-gateway:default": {
@@ -79,29 +82,24 @@
       }
     }
   },
-
-  "mcp": {
-    "servers": {
-      "github": {
-        "command": "docker",
-        "args": [
-          "run",
-          "-i",
-          "--rm",
-          "-e",
-          "GITHUB_PERSONAL_ACCESS_TOKEN",
-          "-e",
-          "GITHUB_DYNAMIC_TOOLSETS",  
-          "-e",
-          "GITHUB_INSIDERS",
-          "ghcr.io/github/github-mcp-server"
-        ],
-        "env": {
-          "GITHUB_PERSONAL_ACCESS_TOKEN": "${GH_TOKEN}",
-          "GITHUB_DYNAMIC_TOOLSETS": "1",
-          "GITHUB_INSIDERS": "true"
-        }
+  "hooks": {
+    "internal": {
+      "enabled": true
+    },
+    "enabled": true,
+    "path": "/hooks",
+    "token": "${OPENCLAW_HOOKS_TOKEN}",
+    "mappings": [
+      {
+        "id": "github-pm",
+        "match": { "path": "/hooks" },
+        "action": "agent",
+        "agentId": "main",
+        "messageTemplate": "=== GITHUB WEBHOOK RECEIVED ===\nEvent: {{body.action}} | Type: {{body.pull_request.html_url || body.workflow_run.html_url || body.issue.html_url || 'unknown'}}\nRepository: {{body.repository.full_name}}\n\nYou are the strict Project Manager. Follow this exact process:\n\n1. EARLY FILTER: If this is NOT a pull_request (opened/synchronize/ready_for_review/closed/reopened), workflow_run (completed), or issues (edited/labeled/closed) → reply ONLY with 'IGNORED' and stop.\n\n2. FETCH FRESH DATA using GitHub tools (PR diff, linked issue, CI status, etc.).\n\n3. PR REVIEW & MERGE:\n   - Compare changes STRICTLY against the linked issue specification.\n   - If CI green AND specs fully met → approve + merge.\n   - Else → post a clear, actionable review comment tagging the Copilot agent and request rework.\n\n4. ON SUCCESSFUL MERGE:\n   - Immediately find the next highest-priority unassigned issue in the backlog (sort by priority label or milestone).\n   - Assign it to the Copilot Cloud Agent with a detailed comment containing title + acceptance criteria.\n\nLog every decision with URLs. Be deterministic. Never auto-merge risky changes."
       }
-    }
+    ]
+  },
+  "cron": {
+    "enabled": true
   }
 }
