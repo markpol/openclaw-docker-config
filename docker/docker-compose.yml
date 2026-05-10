@@ -1,16 +1,34 @@
 services:
   openclaw-gateway:
     image: ghcr.io/${GHCR_USERNAME}/openclaw-docker-config/openclaw-gateway:latest
-    env_file: .env
     restart: unless-stopped
+    volumes:
+      - ${OPENCLAW_CONFIG_DIR:-/home/openclaw/.openclaw}:/home/node/.openclaw
+      - ${OPENCLAW_WORKSPACE_DIR:-/home/openclaw/.openclaw/workspace}:/home/node/.openclaw/workspace
+
     environment:
       HOME: /home/node
       NODE_ENV: production
       TERM: xterm-256color
-    volumes:
-      - ${OPENCLAW_CONFIG_DIR:-/home/openclaw/.openclaw}:/home/node/.openclaw
-      - ${OPENCLAW_WORKSPACE_DIR:-/home/openclaw/.openclaw/workspace}:/home/node/.openclaw/workspace
-      - HUBPROXY_URL="http://hubproxy:8081/api/replay"
+
+      # Default Agent Provider
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:-}
+      # embeddings and codex
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Telegram bot
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-}
+      OPENCLAW_GATEWAY_PORT: ${OPENCLAW_GATEWAY_PORT:-18789}
+      OPENCLAW_GATEWAY_BIND: ${OPENCLAW_GATEWAY_BIND:-}
+      
+      OPENCLAW_HOOKS_TOKEN: ${OPENCLAW_HOOKS_TOKEN:-}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
+      
+      HUBPROXY_URL: "http://hubproxy:8081/api/replay" 
+
+      TAILSCALE_DOMAIN: ${TAILSCALE_DOMAIN:-}
+
     networks:
       - openclaw-net
     ports:
@@ -20,15 +38,15 @@ services:
   # Ingests GitHub webhooks
   hubproxy:
     image: ghcr.io/${GHCR_USERNAME}/openclaw-docker-config/hubproxy:latest
-    env_file: .env
     restart: unless-stopped
     environment:
-      - HUBPROXY_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET}   # same secret you set in GitHub
-      - HUBPROXY_DB=postgres://hubproxy:${POSTGRES_PASSWORD}@postgres:5432/hubproxy?sslmode=disable
-      - HUBPROXY_LOG_LEVEL=info
+      HUBPROXY_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}   # same secret you set in GitHub
+      HUBPROXY_DB: postgres://hubproxy:${POSTGRES_PASSWORD}@postgres:5432/hubproxy?sslmode=disable
+      HUBPROXY_LOG_LEVEL: info
       # NO HUBPROXY_TARGET_URL → pure ingestion-only mode (no auto-forward)
+    command: hubproxy --validate-ip=false
     ports:
-      - "127.0.0.1:8443:8080"   # ← Webhook handler (exposed via Tailscale Funnel)
+      - "127.0.0.1:8080:8080"   # ← Webhook handler (exposed via Tailscale Funnel)
     networks:
       - openclaw-net
     depends_on:
@@ -37,7 +55,6 @@ services:
   # Persists webhook events, database for the hubproxy
   postgres:
     image: postgres:16-alpine
-    env_file: .env
     restart: unless-stopped
     environment:
       - POSTGRES_DB=hubproxy
@@ -48,18 +65,17 @@ services:
     networks:
       - openclaw-net
 
-  # Optional regulator service to sync events from hubproxy to OpenClaw agents.
+  # Optional regulator service to forward events from hubproxy to OpenClaw agents.
   regulator:
     image: ghcr.io/${GHCR_USERNAME}/openclaw-docker-config/regulator:latest
-    env_file: .env
     restart: unless-stopped
     environment:
-      - REGULATOR_CONFIG_PATH=${REGULATOR_CONFIG_PATH}
-      - REGULATOR_LOG_LEVEL=info
-      - REGULATOR_SYNC_INTERVAL=60000  # Sync every 60 seconds. Adjust as needed.
+      REGULATOR_LOG_LEVEL: ${REGULATOR_LOG_LEVEL:-info}
+      REGULATOR_SYNC_INTERVAL: ${REGULATOR_SYNC_INTERVAL:-60000}  # Sync every 60 seconds. Adjust as needed.
+      OPENCLAW_HOOKS_TOKEN: ${OPENCLAW_HOOKS_TOKEN:-}
     volumes:
-      - ${REGULATOR_CONFIG_PATH}:/home/node/regulator-config.json:ro
-      - ${OPENCLAW_CONFIG_DIR:-/home/openclaw/.openclaw}:/home/node/.openclaw:ro
+      - ${REGULATOR_CONFIG_DIR:-/home/openclaw/.regulator}:/app/data
+      - ${OPENCLAW_CONFIG_DIR:-/home/openclaw/.openclaw}:/app/openclaw:ro
     networks:
       - openclaw-net
 

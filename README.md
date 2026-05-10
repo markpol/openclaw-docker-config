@@ -1,6 +1,6 @@
 # OpenClaw Docker Config
 
-Docker configuration and application setup for OpenClaw. Companion repository to [openclaw-terraform-hetzner](https://github.com/andreesg/openclaw-terraform-hetzner).
+Docker configuration and application setup for OpenClaw. Companion repository to [openclaw-terraform-hetzner](https://github.com/markpol/openclaw-terraform-hetzner).
 
 **Note:** This is a minimal, generic configuration with only essential skills activated. You're encouraged to customize it by adding [ClawHub skills](https://clawhub.ai/) or creating your own custom skills (see [Working with Skills](#working-with-skills)).
 
@@ -29,7 +29,7 @@ Docker configuration and application setup for OpenClaw. Companion repository to
 
 - Docker and Docker Compose on the VPS
 - SSH access to the VPS (`ssh openclaw@VPS_IP`)
-- The infra repo (`openclaw-terraform-hetzner`) set up with `config/inputs.sh` pointing `CONFIG_DIR` to this repo
+- The infra repo (`openclaw-terraform-hetzner`) set up with `config/inputs.sh` pointing `OPENCLAW_CONFIG_DIR` to this repo
 - API keys (see `docker/.env.example` for the full list; secrets live in the infra repo's `secrets/openclaw.env`)
 
 ## How This Repo Connects to the VPS
@@ -48,7 +48,7 @@ specific files from your local checkout to the VPS:
 
 > Provisioning and bootstrap are handled by the infra repo. See its README.
 
-1. **In the infra repo**, set `CONFIG_DIR` in `config/inputs.sh` to point to this repo's directory
+1. **In the infra repo**, set `OPENCLAW_CONFIG_DIR` in `config/inputs.sh` to point to this repo's directory
 2. **Log in to GHCR** (one-time, on your laptop):
    ```bash
    echo "$GHCR_TOKEN" | docker login ghcr.io -u $GHCR_USERNAME --password-stdin

@@ -4,14 +4,14 @@ set -euo pipefail
 MANIFEST="/opt/config/skills-manifest.txt"
 WORKDIR="/home/node/.openclaw/workspace"
 
-###############################################################################
-# Seed workspace templates (no-clobber — won't overwrite existing files)
-###############################################################################
-TEMPLATES="/opt/workspace-templates"
-if [[ -d "$TEMPLATES" ]]; then
-  echo "[entrypoint] Seeding workspace templates ..."
-  cp -rn "$TEMPLATES"/. "$WORKDIR"/
-fi
+# ###############################################################################
+# # Seed workspace templates (no-clobber — won't overwrite existing files)
+# ###############################################################################
+# TEMPLATES="/opt/workspace-templates"
+# if [[ -d "$TEMPLATES" ]]; then
+#   echo "[entrypoint] Seeding workspace templates ..."
+#   cp -rn "$TEMPLATES"/* "$WORKDIR"/
+# fi
 
 ###############################################################################
 # Install ClawHub skills from the manifest (if present)

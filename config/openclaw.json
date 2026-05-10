@@ -13,7 +13,9 @@
     "controlUi": {
       "allowInsecureAuth": false,
       "allowedOrigins": [
-        "http://localhost:18789"
+	      "http://localhost:18789",
+        "http://openclaw-prod:18789",
+        "https://openclaw-prod.${TAILSCALE_DOMAIN}"
       ]
     }
   },
@@ -30,6 +32,15 @@
   },
   "plugins": {
     "entries": {
+      "bonjour": {
+        "enabled": false
+      },
+      "talk-voice": {
+        "enabled": false
+      },
+      "phone-control": {
+        "enabled": false
+      },
       "telegram": {
         "enabled": true
       },
@@ -50,11 +61,40 @@
   },
   "agents": {
     "defaults": {
+      "workspace": "~/.openclaw/workspace/main",
       "model": {
-        "primary": "vercel-ai-gateway/xai/grok-4-fast-reasoning"
+        "primary": "vercel-ai-gateway/xai/grok-4-fast-reasoning",
+        "fallbacks": [
+          "vercel-ai-gateway/minimax/minimax-m2.5",
+          "vercel-ai-gateway/deepseek/deepseek-v4-flash",
+          "vercel-ai-gateway/alibaba/qwen3.5-flash"
+        ]
       },
       "compaction": {
-        "mode": "safeguard"
+        "mode": "default",
+        "reserveTokensFloor": 24000,
+        "keepRecentTokens": 50000,
+        "notifyUser": true,
+        "memoryFlush": {
+          "enabled": true,
+          "softThresholdTokens": 6000,
+          "systemPrompt": "Session nearing compaction. Store durable memories now.",
+          "prompt": "Write any lasting notes to memory/YYYY-MM-DD.md; reply with the exact silent token NO_REPLY if nothing to store."
+        }
+      },
+      "heartbeat": {
+        "every": "4h"
+      },
+      "contextPruning": {
+        "mode": "cache-ttl",
+        "ttl": "4h",
+        "keepLastAssistants": 50,
+        "softTrimRatio": 0.3,
+        "hardClearRatio": 0.5,
+        "minPrunableToolChars": 5000,
+        "softTrim": { "maxChars": 500, "headChars": 50, "tailChars": 50 },
+        "hardClear": { "enabled": true, "placeholder": "[Old tool result content cleared]" },
+        "tools": { "deny": ["browser", "canvas"] }
       },
       "maxConcurrent": 2,
       "subagents": {
@@ -83,21 +123,10 @@
     }
   },
   "hooks": {
-    "internal": {
-      "enabled": true
-    },
     "enabled": true,
     "path": "/hooks",
     "token": "${OPENCLAW_HOOKS_TOKEN}",
-    "mappings": [
-      {
-        "id": "github-pm",
-        "match": { "path": "/hooks" },
-        "action": "agent",
-        "agentId": "main",
-        "messageTemplate": "=== GITHUB WEBHOOK RECEIVED ===\nEvent: {{body.action}} | Type: {{body.pull_request.html_url || body.workflow_run.html_url || body.issue.html_url || 'unknown'}}\nRepository: {{body.repository.full_name}}\n\nYou are the strict Project Manager. Follow this exact process:\n\n1. EARLY FILTER: If this is NOT a pull_request (opened/synchronize/ready_for_review/closed/reopened), workflow_run (completed), or issues (edited/labeled/closed) → reply ONLY with 'IGNORED' and stop.\n\n2. FETCH FRESH DATA using GitHub tools (PR diff, linked issue, CI status, etc.).\n\n3. PR REVIEW & MERGE:\n   - Compare changes STRICTLY against the linked issue specification.\n   - If CI green AND specs fully met → approve + merge.\n   - Else → post a clear, actionable review comment tagging the Copilot agent and request rework.\n\n4. ON SUCCESSFUL MERGE:\n   - Immediately find the next highest-priority unassigned issue in the backlog (sort by priority label or milestone).\n   - Assign it to the Copilot Cloud Agent with a detailed comment containing title + acceptance criteria.\n\nLog every decision with URLs. Be deterministic. Never auto-merge risky changes."
-      }
-    ]
+    "allowedAgentIds": ["main"]
   },
   "cron": {
     "enabled": true
