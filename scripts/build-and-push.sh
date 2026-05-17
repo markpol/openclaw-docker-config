@@ -80,12 +80,12 @@ if [[ "$SERVICE" == "all" || "$SERVICE" == "gateway" ]]; then
     echo ""
 
     cd $REPO_ROOT
-    SHA=$(git qrev-parse --short HEAD)
-    docker buildx build --platform linux/amd64 -f "$REPO_ROOT/docker/Dockerfile" -t "$GW_IMAGE:$TAG" -t "$GW_IMAGE:$SHA" --push "$REPO_ROOT"
+    SHA=$(git rev-parse --short HEAD)
+    docker buildx build --platform linux/amd64,linux/arm64 -f "$REPO_ROOT/docker/Dockerfile" -t "$GW_IMAGE:$TAG" -t "$GW_IMAGE:$SHA" --push "$REPO_ROOT"
 
     echo ""
-    echo "✓ Built and pushed $GW_IMAGE:$TAG (linux/amd64)"
-    echo "✓ Built and pushed $GW_IMAGE:$SHA (linux/amd64)"
+    echo "✓ Built and pushed $GW_IMAGE:$TAG (linux/amd64,linux/arm64)"
+    echo "✓ Built and pushed $GW_IMAGE:$SHA (linux/amd64,linux/arm64)"
 fi
 
 # --- Workspace-sync image ---
@@ -100,11 +100,11 @@ if [[ "$SERVICE" == "all" || "$SERVICE" == "workspace-sync" ]]; then
 
     cd $REPO_ROOT
     SHA=$(git rev-parse --short HEAD)
-    docker buildx build --platform linux/amd64 -f "$REPO_ROOT/docker/workspace-sync/Dockerfile" -t "$WS_IMAGE:$TAG" -t "$WS_IMAGE:$SHA" --push "$REPO_ROOT/docker/workspace-sync"
+    docker buildx build --platform linux/amd64,linux/arm64 -f "$REPO_ROOT/docker/workspace-sync/Dockerfile" -t "$WS_IMAGE:$TAG" -t "$WS_IMAGE:$SHA" --push "$REPO_ROOT/docker/workspace-sync"
 
     echo ""
-    echo "✓ Built and pushed $WS_IMAGE:$TAG (linux/amd64)"
-    echo "✓ Built and pushed $WS_IMAGE:$SHA (linux/amd64)"
+    echo "✓ Built and pushed $WS_IMAGE:$TAG (linux/amd64,linux/arm64)"
+    echo "✓ Built and pushed $WS_IMAGE:$SHA (linux/amd64,linux/arm64)"
 fi
 
 # --- Hubproxy image ---
@@ -119,11 +119,11 @@ if [[ "$SERVICE" == "all" || "$SERVICE" == "hubproxy" ]]; then
 
     cd "$REPO_PARENT_ROOT/hubproxy"
     SHA=$(git rev-parse --short HEAD)
-    docker buildx build --platform linux/amd64 -f Dockerfile -t "$HP_IMAGE:$TAG" -t "$HP_IMAGE:$SHA" --push "$REPO_PARENT_ROOT/hubproxy"
+    docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile -t "$HP_IMAGE:$TAG" -t "$HP_IMAGE:$SHA" --push "$REPO_PARENT_ROOT/hubproxy"
 
     echo ""
-    echo "✓ Built and pushed $HP_IMAGE:$TAG (linux/amd64)"
-    echo "✓ Built and pushed $HP_IMAGE:$SHA (linux/amd64)"
+    echo "✓ Built and pushed $HP_IMAGE:$TAG (linux/amd64,linux/arm64)"
+    echo "✓ Built and pushed $HP_IMAGE:$SHA (linux/amd64,linux/arm64)"
 fi
 
 # --- Regulator image ---
@@ -138,9 +138,9 @@ if [[ "$SERVICE" == "all" || "$SERVICE" == "regulator" ]]; then
 
     cd "$REPO_PARENT_ROOT/openclaw-hubproxy-event-regulator"
     SHA=$(git rev-parse --short HEAD)
-    docker buildx build --platform linux/amd64 -f Dockerfile -t "$REG_IMAGE:$TAG" -t "$REG_IMAGE:$SHA" --push "$REPO_PARENT_ROOT/openclaw-hubproxy-event-regulator"
+    docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile -t "$REG_IMAGE:$TAG" -t "$REG_IMAGE:$SHA" --push "$REPO_PARENT_ROOT/openclaw-hubproxy-event-regulator"
 
     echo ""
-    echo "✓ Built and pushed $REG_IMAGE:$TAG (linux/amd64)"
-    echo "✓ Built and pushed $REG_IMAGE:$SHA (linux/amd64)"
+    echo "✓ Built and pushed $REG_IMAGE:$TAG (linux/amd64,linux/arm64)"
+    echo "✓ Built and pushed $REG_IMAGE:$SHA (linux/amd64,linux/arm64)"
 fi

@@ -13,7 +13,8 @@
     "controlUi": {
       "allowInsecureAuth": false,
       "allowedOrigins": [
-	      "http://localhost:18789",
+        "http://localhost:18789",
+        "http://${REMOTE_SERVER_IP}:18789",
         "http://openclaw-prod:18789",
         "https://openclaw-prod.${TAILSCALE_DOMAIN}"
       ]
@@ -31,76 +32,64 @@
     }
   },
   "plugins": {
+    "enabled": true,
+    "allow": [
+      "telegram",
+      "vercel-ai-gateway",
+      "lobster"
+    ],
     "entries": {
-      "bonjour": {
-        "enabled": false
-      },
-      "talk-voice": {
-        "enabled": false
-      },
-      "phone-control": {
-        "enabled": false
-      },
       "telegram": {
         "enabled": true
       },
       "vercel-ai-gateway": {
         "enabled": true
       },
-      "memory-core": {
-        "config": {
-          "dreaming": {
-            "enabled": true
-          }
-        }
-      },
-      "memory-wiki": {
+      "lobster": {
         "enabled": true
       }
     }
   },
   "agents": {
     "defaults": {
-      "workspace": "~/.openclaw/workspace/main",
       "model": {
-        "primary": "vercel-ai-gateway/xai/grok-4-fast-reasoning",
+        "primary": "vercel-ai-gateway/google/gemini-3.1-flash-lite-preview",
         "fallbacks": [
+          "vercel-ai-gateway/xai/grok-4.3",
+          "vercel-ai-gateway/xai/grok-4.1-fast-reasoning",
           "vercel-ai-gateway/minimax/minimax-m2.5",
+          "vercel-ai-gateway/deepseek/deepseek-v4-pro",
           "vercel-ai-gateway/deepseek/deepseek-v4-flash",
-          "vercel-ai-gateway/alibaba/qwen3.5-flash"
+          "vercel-ai-gateway/alibaba/qwen3.6-27b",
+          "vercel-ai-gateway/alibaba/qwen3.5-flash",
+          "vercel-ai-gateway/xiaomi/mimo-v2.5",
+          "vercel-ai-gateway/moonshotai/kimi-k2.6",
+          "vercel-ai-gateway/zai/glm-5.1"
         ]
-      },
-      "compaction": {
-        "mode": "default",
-        "reserveTokensFloor": 24000,
-        "keepRecentTokens": 50000,
-        "notifyUser": true,
-        "memoryFlush": {
-          "enabled": true,
-          "softThresholdTokens": 6000,
-          "systemPrompt": "Session nearing compaction. Store durable memories now.",
-          "prompt": "Write any lasting notes to memory/YYYY-MM-DD.md; reply with the exact silent token NO_REPLY if nothing to store."
-        }
       },
       "heartbeat": {
         "every": "4h"
       },
-      "contextPruning": {
-        "mode": "cache-ttl",
-        "ttl": "4h",
-        "keepLastAssistants": 50,
-        "softTrimRatio": 0.3,
-        "hardClearRatio": 0.5,
-        "minPrunableToolChars": 5000,
-        "softTrim": { "maxChars": 500, "headChars": 50, "tailChars": 50 },
-        "hardClear": { "enabled": true, "placeholder": "[Old tool result content cleared]" },
-        "tools": { "deny": ["browser", "canvas"] }
-      },
       "maxConcurrent": 2,
       "subagents": {
         "maxConcurrent": 4
+      },
+      "models": {
+        "vercel-ai-gateway/*": {}
+      },
+      "skills": []
+    },
+    "list": [
+      {
+        "id": "pm",
+        "workspace": "~/.openclaw/workspace-pm",
+        "tools": {
+          "alsoAllow": [
+            "lobster"
+          ]
+        }
       }
-    }
+    ]
   },
   "commands": {
     "native": "auto",
@@ -126,9 +115,35 @@
     "enabled": true,
     "path": "/hooks",
     "token": "${OPENCLAW_HOOKS_TOKEN}",
-    "allowedAgentIds": ["main"]
+    "defaultSessionKey": "hook:ingress",
+    "allowedSessionKeyPrefixes": [
+      "hook:",
+      "hook:pm:"
+    ],
+    "allowedAgentIds": [
+      "pm"
+    ],
+    "mappings": [
+      {
+        "id": "github-pm",
+        "match": {
+          "path": "github-pm"
+        },
+        "action": "agent",
+        "agentId": "pm",
+        "sessionKey": "hook:pm:orchestrator",
+        "wakeMode": "now",
+        "messageTemplate": "Execute Lobster workflow for event: {{action}}\nPayload: {{payload_key}}={{payload_value}}",
+        "thinking": "low",
+        "deliver": true
+      }
+    ]
   },
   "cron": {
     "enabled": true
+  },
+  "meta": {
+    "lastTouchedVersion": "2026.5.12",
+    "lastTouchedAt": "2026-05-17T12:34:25.797Z"
   }
 }

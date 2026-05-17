@@ -27,6 +27,7 @@ services:
       
       HUBPROXY_URL: "http://hubproxy:8081/api/replay" 
 
+      REMOTE_SERVER_IP: ${REMOTE_SERVER_IP:-}
       TAILSCALE_DOMAIN: ${TAILSCALE_DOMAIN:-}
 
     networks:
@@ -78,20 +79,24 @@ services:
       - ${OPENCLAW_CONFIG_DIR:-/home/openclaw/.openclaw}:/app/openclaw:ro
     networks:
       - openclaw-net
+    command: --once --config /app/data/config.yaml
+    depends_on:
+      - openclaw-gateway
+      - hubproxy
 
-  workspace-sync:
-    image: ghcr.io/${GHCR_USERNAME}/openclaw-docker-config/workspace-sync:latest
-    restart: unless-stopped
-    environment:
-      GIT_WORKSPACE_REPO: ${GIT_WORKSPACE_REPO:-}
-      GIT_WORKSPACE_REMOTE: ${GIT_WORKSPACE_REMOTE:-}
-      GIT_WORKSPACE_BRANCH: ${GIT_WORKSPACE_BRANCH:-auto}
-      GIT_WORKSPACE_TOKEN: ${GIT_WORKSPACE_TOKEN:-}
-      GIT_WORKSPACE_SYNC_SCHEDULE: ${GIT_WORKSPACE_SYNC_SCHEDULE:-0 4 * * *}
-    volumes:
-      - ${OPENCLAW_WORKSPACE_DIR:-/home/openclaw/.openclaw/workspace}:/workspace
-    profiles:
-      - sync
+  # workspace-sync:
+  #   image: ghcr.io/${GHCR_USERNAME}/openclaw-docker-config/workspace-sync:latest
+  #   restart: unless-stopped
+  #   environment:
+  #     GIT_WORKSPACE_REPO: ${GIT_WORKSPACE_REPO:-}
+  #     GIT_WORKSPACE_REMOTE: ${GIT_WORKSPACE_REMOTE:-}
+  #     GIT_WORKSPACE_BRANCH: ${GIT_WORKSPACE_BRANCH:-auto}
+  #     GIT_WORKSPACE_TOKEN: ${GIT_WORKSPACE_TOKEN:-}
+  #     GIT_WORKSPACE_SYNC_SCHEDULE: ${GIT_WORKSPACE_SYNC_SCHEDULE:-0 4 * * *}
+  #   volumes:
+  #     - ${OPENCLAW_WORKSPACE_DIR:-/home/openclaw/.openclaw/workspace}:/workspace
+  #   profiles:
+  #     - sync
 
   # For multi-agent setups, duplicate the workspace-sync service for each agent.
   # The volume subdirectory must match the agent's workspace path in openclaw.json

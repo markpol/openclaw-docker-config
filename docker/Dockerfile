@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     gnupg \
     tini \
+    jq \
   && rm -rf /var/lib/apt/lists/*
 
 # Install GitHub CLI (required by github skill)
@@ -27,11 +28,21 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
   && rm -rf /var/lib/apt/lists/*
 
 # Pin OpenClaw version for reproducible builds — bump explicitly when upgrading
-ARG OPENCLAW_VERSION=2026.4.24
+ARG OPENCLAW_VERSION=2026.5.12
 RUN npm install -g openclaw@${OPENCLAW_VERSION}
 
-# Install ClawHub CLI for skill management
-RUN npm install -g clawhub
+# Install ClawHub and CLI tools for skill/plugin management
+RUN npm install -g clawhub pnpm @typescript/native-preview
+
+# === STANDALONE LOBSTER CLI (Required for reliable agent-send / openclaw.invoke) ===
+# Cloned from official repo per https://docs.openclaw.ai/tools/lobster
+RUN git clone --depth 1 https://github.com/openclaw/lobster.git /opt/lobster \
+  && cd /opt/lobster \
+  && pnpm install --frozen-lockfile \
+  && pnpm run build \
+  && ln -s /opt/lobster/bin/lobster.js /usr/local/bin/lobster \
+  && ln -s /opt/lobster/bin/lobster.js /usr/local/bin/openclaw.invoke \
+  && chown -R node:node /opt/lobster
 
 # Create OpenClaw directories owned by node
 RUN mkdir -p /home/node/.openclaw/workspace /.clawhub \
@@ -46,5 +57,13 @@ COPY workspace-templates/ /opt/workspace-templates/
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 USER node
+
+WORKDIR /home/node/.openclaw
+
+RUN cd /home/node/.openclaw && \
+    openclaw plugins install lobster
+
+# Install gh-sub-issue extension for GitHub CLI, used by some PM skills
+RUN gh extension install yahsan2/gh-sub-issue
 
 ENTRYPOINT ["tini", "--", "entrypoint.sh"]
